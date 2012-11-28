@@ -733,8 +733,8 @@ NSDataDetector* sharedReusableDataDetector(NSTextCheckingTypes types)
     scanner.charactersToBeSkipped = nil;
 
     NSString *buffer = nil;
-    NSString *placeholderString = nil;
-    NSString *substitutedString = nil;
+    NSMutableArray *referenceKeyArray = [NSMutableArray array];
+    NSMutableArray *substitutedStringArray = [NSMutableArray array];
 
     while (! scanner.isAtEnd) {
         if ([scanner scanUpToString:@"{" intoString:&buffer]) {
@@ -744,12 +744,12 @@ NSDataDetector* sharedReusableDataDetector(NSTextCheckingTypes types)
                 [scanner setScanLocation:scanner.scanLocation + 1]; // get past the "{"
 
                 if ([scanner scanUpToString:@"}" intoString:&buffer]) {
-                    placeholderString = buffer;
+                    [referenceKeyArray addObject:buffer];
                     if (! scanner.isAtEnd) {
                         id substitution = block(buffer);
                         if (substitution) {
                             [finalString appendString:substitution];
-                            substitutedString = substitution;
+                            [substitutedStringArray addObject:substitution];
                         }
 
                         [scanner setScanLocation:scanner.scanLocation + 1]; // get past the "}
@@ -761,12 +761,17 @@ NSDataDetector* sharedReusableDataDetector(NSTextCheckingTypes types)
 
     self.text = finalString;
 
-    if (substitutedString)
+    if (substitutedStringArray.count > 0)
     {
-        NSRange tagRange = [self.text rangeOfString:[@"@" stringByAppendingString:substitutedString]];
-        [self addCustomLink:[NSURL URLWithString:placeholderString] inRange:tagRange];
-        self.linkColor = [UIColor blueColor];
-        self.linkUnderlineStyle = kCTUnderlineStyleNone;
+        int i = 0;
+        for (NSString *substitutedString in substitutedStringArray)
+        {
+            NSRange tagRange = [self.text rangeOfString:[@"@" stringByAppendingString:substitutedString]];
+            [self addCustomLink:[NSURL URLWithString:[referenceKeyArray objectAtIndex:i]] inRange:tagRange];
+            self.linkColor = [UIColor blueColor];
+            self.linkUnderlineStyle = kCTUnderlineStyleNone;
+            i++;
+        }
     }
 
     return self;
