@@ -356,8 +356,16 @@ NSDataDetector* sharedReusableDataDetector(NSTextCheckingTypes types)
 	if (self.onlyCatchTouchesOnLinks) {
 		BOOL didHitLink = ([self linkAtPoint:point] != nil);
 		if (!didHitLink) {
-			// not catch the touch if it didn't hit a link
-			return nil;
+			if (self.delegate &&
+                [self.delegate respondsToSelector:@selector(userDidTapLabelOutsideLink:)])
+            {
+                [self.delegate userDidTapLabelOutsideLink:point];
+            }
+            else
+            {
+                // not catch the touch if it didn't hit a link
+                return nil;
+            }
 		}
 	}
 	return hitResult;
