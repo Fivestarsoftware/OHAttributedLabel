@@ -721,7 +721,56 @@ NSDataDetector* sharedReusableDataDetector(NSTextCheckingTypes types)
 	[super setNeedsDisplay];
 }
 
+- (NSUInteger)length
+{
+    return self.text.length;
+}
 
+- (OHAttributedLabel *)attributedLabelWithLinkBySubstitutingStringWith:(StringSubstitutionBlock)block
+{
+    NSMutableString *finalString = [NSMutableString string];
+    NSScanner *scanner = [NSScanner scannerWithString:self.text];
+    scanner.charactersToBeSkipped = nil;
+
+    NSString *buffer = nil;
+    NSString *placeholderString = nil;
+    NSString *substitutedString = nil;
+
+    while (! scanner.isAtEnd) {
+        if ([scanner scanUpToString:@"{" intoString:&buffer]) {
+            [finalString appendString:buffer];
+
+            if (! scanner.isAtEnd) {
+                [scanner setScanLocation:scanner.scanLocation + 1]; // get past the "{"
+
+                if ([scanner scanUpToString:@"}" intoString:&buffer]) {
+                    placeholderString = buffer;
+                    if (! scanner.isAtEnd) {
+                        id substitution = block(buffer);
+                        if (substitution) {
+                            [finalString appendString:substitution];
+                            substitutedString = substitution;
+                        }
+
+                        [scanner setScanLocation:scanner.scanLocation + 1]; // get past the "}
+                    }
+                }
+            }
+        }
+    }
+
+    self.text = finalString;
+
+    if (substitutedString)
+    {
+        NSRange tagRange = [self.text rangeOfString:[@"@" stringByAppendingString:substitutedString]];
+        [self addCustomLink:[NSURL URLWithString:placeholderString] inRange:tagRange];
+        self.linkColor = [UIColor blueColor];
+        self.linkUnderlineStyle = kCTUnderlineStyleNone;
+    }
+
+    return self;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////////////

@@ -106,4 +106,7 @@ typedef CF_OPTIONS(int32_t, OHBoldStyleTrait)  {
 @property(nonatomic, assign) BOOL centerVertically;
 //! Allows to draw text past the bottom of the view if need. May help in rare cases (like using Emoji)
 @property(nonatomic, assign) BOOL extendBottomToFit;
+
+- (OHAttributedLabel *)attributedLabelWithLinkBySubstitutingStringWith:(StringSubstitutionBlock)block;
+- (NSUInteger)length;
 @end
