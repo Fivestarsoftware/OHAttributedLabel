@@ -742,7 +742,7 @@ NSDataDetector* sharedReusableDataDetector(NSTextCheckingTypes types)
 
     NSString *buffer = nil;
     NSMutableArray *referenceKeyArray = [NSMutableArray array];
-    NSMutableArray *substitutedStringArray = [NSMutableArray array];
+    NSMutableArray *substitutedStringRangeArray = [NSMutableArray array];
 
     while (! scanner.isAtEnd) {
         if ([scanner scanUpToString:@"{" intoString:&buffer]) {
@@ -756,8 +756,9 @@ NSDataDetector* sharedReusableDataDetector(NSTextCheckingTypes types)
                     if (! scanner.isAtEnd) {
                         id substitution = block(buffer);
                         if (substitution) {
+                            [substitutedStringRangeArray addObject:[NSValue valueWithRange:NSMakeRange([finalString length] - 1,
+                                                                                                  ((NSString *)substitution).length + 1)]];
                             [finalString appendString:substitution];
-                            [substitutedStringArray addObject:substitution];
                         }
 
                         [scanner setScanLocation:scanner.scanLocation + 1]; // get past the "}
@@ -769,12 +770,13 @@ NSDataDetector* sharedReusableDataDetector(NSTextCheckingTypes types)
 
     self.text = finalString;
 
-    if (substitutedStringArray.count > 0)
+    if (substitutedStringRangeArray.count > 0)
     {
         int i = 0;
-        for (NSString *substitutedString in substitutedStringArray)
+        for (NSValue *substitutedStringRange in substitutedStringRangeArray)
         {
-            NSRange tagRange = [self.text rangeOfString:[@"@" stringByAppendingString:substitutedString]];
+            NSRange tagRange = [substitutedStringRange rangeValue];
+
             [self addCustomLink:[NSURL URLWithString:[referenceKeyArray objectAtIndex:i]] inRange:tagRange];
             self.linkColor = [UIColor blueColor];
             self.linkUnderlineStyle = kCTUnderlineStyleNone;
@@ -784,7 +786,6 @@ NSDataDetector* sharedReusableDataDetector(NSTextCheckingTypes types)
 
     return self;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - UILabel unsupported features/known issues warnings
